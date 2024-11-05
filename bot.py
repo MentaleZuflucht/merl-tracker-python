@@ -14,6 +14,7 @@ bot_logger.info('Logging setup complete')
 intents = discord.Intents.default()
 intents.presences = True
 intents.members = True
+intents.message_content = True
 bot_logger.debug(f'Intents setup complete: {intents}')
 
 # Create bot instance
