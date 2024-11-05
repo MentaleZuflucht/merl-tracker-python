@@ -16,6 +16,7 @@ class BotEvents(commands.Cog):
         self.bot_logger = logging.getLogger('bot.events')
         self.message_timestamp = None
         self.last_channel_id = None
+        self.user_was_online = False
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -41,6 +42,15 @@ class BotEvents(commands.Cog):
         """
         if message.author == self.bot.user:
             return
+
+        # Check if the target user is already online when message is received
+        target_user = message.guild.get_member(self.bot.config.user_id)
+        if target_user and target_user.status == discord.Status.online:
+            self.user_was_online = True
+            self.bot_logger.debug('Target user was already online when message was received')
+            return
+
+        self.user_was_online = False
         self.message_timestamp = time.time()
         self.last_channel_id = message.channel.id
         self.bot_logger.debug(f'Message received from {message.author} at {self.message_timestamp}')
@@ -60,20 +70,25 @@ class BotEvents(commands.Cog):
         user_id = self.bot.config.user_id
         countdown = self.bot.config.countdown
 
-        # Skip if the user is already online
-        if after.id == user_id and after.status == discord.Status.online:
-            return
+        # Add debug logging for presence changes
+        if after.id == user_id:
+            self.bot_logger.debug(f'User {after.name} presence changed from {before.status} to {after.status}')
 
         if after.id == user_id and before.status != discord.Status.online and after.status == discord.Status.online:
-            if self.message_timestamp:
+            if self.message_timestamp and not self.user_was_online:
                 time_taken = time.time() - self.message_timestamp
                 if time_taken <= countdown:
                     self.bot_logger.info(f'User {after.name} came online within {time_taken:.2f} seconds')
                     channel = self.bot.get_channel(self.last_channel_id)
                     if channel:
-                        await channel.send(f'{after.name} came online {time_taken:.2f} seconds after the message')
+                        embed = discord.Embed(
+                            title="🌈 Femboy Merlin ist gekommen 💦",
+                            description=f"Femboy Merlin ist in nur {time_taken:.3f} Sekunden gekommen! ✨",
+                            color=discord.Color.purple()
+                        )
+                        await channel.send(embed=embed)
                 else:
-                    self.bot_logger.info(f'User {after.name} came online after {time_taken:.2f} seconds')
+                    self.bot_logger.debug(f'User {after.name} came online after {time_taken:.2f} seconds')
                 self.message_timestamp = None
 
 
