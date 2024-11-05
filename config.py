@@ -1,0 +1,135 @@
+import os
+import yaml
+import logging.config
+from pathlib import Path
+
+# Base directory of the project
+BASE_DIR = Path(__file__).resolve().parent
+
+# Log file path
+LOG_FOLDER_PATH = BASE_DIR / 'logs'
+LOG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
+CONFIG_FOLDER_PATH = BASE_DIR / 'config'
+
+# Record file path
+RECORD_PATH = BASE_DIR / 'record.txt'
+
+
+class CustomFormatter(logging.Formatter):
+    """
+    Custom formatter to add colors to log messages.
+    """
+    COLORS = {
+        'DEBUG': '\033[37m',       # White
+        'INFO': '\033[32m',        # Green
+        'WARNING': '\033[33m',     # Yellow
+        'ERROR': '\033[31m',       # Red
+        'CRITICAL': '\033[1;31m',  # Bold Red
+        'NAME': '\033[36m'         # Cyan
+    }
+    RESET = '\033[0m'
+
+    def format(self, record):
+        log_color = self.COLORS.get(record.levelname, self.RESET)
+        name_color = self.COLORS['NAME']
+        record.levelname = f"{log_color}{record.levelname:<8}{self.RESET}"
+        record.name = f"{name_color}{record.name}{self.RESET}"
+        record.msg = f"{log_color}{record.msg}{self.RESET}"
+        return super().format(record)
+
+
+class BotConfig:
+    """
+    Singleton class to load and provide bot configuration.
+
+    Attributes:
+        token (str): The bot token.
+        server_id (int): The ID of the server.
+        channel_id (int): The ID of the channel.
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        """
+        Creates a new instance of BotConfig if it doesn't exist.
+
+        Returns:
+            BotConfig: The singleton instance of BotConfig.
+        """
+        if cls._instance is None:
+            cls._instance = super(BotConfig, cls).__new__(cls)
+            cls._instance._load_config()
+        return cls._instance
+
+    def _load_config(self):
+        """
+        Loads configuration from a YAML file.
+
+        Raises:
+            FileNotFoundError: If the bot configuration file is not found.
+            yaml.YAMLError: If there is an error parsing the YAML file.
+            Exception: For any other unexpected errors.
+        """
+        try:
+            with open(CONFIG_FOLDER_PATH / 'bot_config.yaml', 'r') as config_file:
+                config = yaml.safe_load(config_file)
+                self.token = config['token']
+                self.channel_id = config['channel_id']
+        except FileNotFoundError:
+            logging.error(f"Bot configuration file not found: {CONFIG_FOLDER_PATH / 'bot_config.yaml'}")
+        except yaml.YAMLError as e:
+            logging.error(f"Error parsing YAML file: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error in Bot Configuration: {e}")
+
+
+def setup_logging():
+    """
+    Sets up the logging configuration for the application.
+
+    Reads the logging configuration from a YAML file and applies it.
+    Updates the log file paths for rotating and error logs.
+
+    Raises:
+        FileNotFoundError: If the logging configuration file is not found.
+        yaml.YAMLError: If there is an error parsing the YAML file.
+        Exception: For any other unexpected errors.
+    """
+    try:
+        with open(CONFIG_FOLDER_PATH / 'logging_config.yaml', 'r') as file:
+            config = yaml.safe_load(file.read())
+
+        # Update file paths
+        config['handlers']['rotating_file']['filename'] = str(LOG_FOLDER_PATH / 'bot.log')
+        config['handlers']['error_file']['filename'] = str(LOG_FOLDER_PATH / 'errors.log')
+
+        logging.config.dictConfig(config)
+    except FileNotFoundError:
+        print(f"Logging configuration file not found: {CONFIG_FOLDER_PATH / 'logging_config.yaml'}")
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML file: {e}")
+    except Exception as e:
+        print(f"Unexpected error in Logging Configuration: {e}")
+
+
+def load_record():
+    """
+    Loads the record from a file.
+
+    Returns:
+        int: The record.
+    """
+    if os.path.exists(RECORD_PATH):
+        with open(RECORD_PATH, 'r') as record_file:
+            return int(record_file.readline())
+
+
+def get_bot_config():
+    """
+    Gets the singleton instance of BotConfig.
+
+    Returns:
+        BotConfig: The singleton instance of BotConfig.
+    """
+    return BotConfig()
