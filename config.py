@@ -44,8 +44,8 @@ class BotConfig:
 
     Attributes:
         token (str): The bot token.
-        server_id (int): The ID of the server.
-        channel_id (int): The ID of the channel.
+        user_id (int): The ID of the user you want to track.
+        countdown (int): How long the user has to have a presence update.
     """
 
     _instance = None
@@ -75,7 +75,8 @@ class BotConfig:
             with open(CONFIG_FOLDER_PATH / 'bot_config.yaml', 'r') as config_file:
                 config = yaml.safe_load(config_file)
                 self.token = config['token']
-                self.channel_id = config['channel_id']
+                self.user_id = config['user_id']
+                self.countdown = config['countdown']
         except FileNotFoundError:
             logging.error(f"Bot configuration file not found: {CONFIG_FOLDER_PATH / 'bot_config.yaml'}")
         except yaml.YAMLError as e:
