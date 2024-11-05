@@ -13,7 +13,6 @@ bot_logger.info('Logging setup complete')
 # Intents
 intents = discord.Intents.default()
 intents.presences = True
-intents.guilds = True
 intents.members = True
 bot_logger.debug(f'Intents setup complete: {intents}')
 
