@@ -84,6 +84,18 @@ class BotConfig:
         except Exception as e:
             logging.error(f"Unexpected error in Bot Configuration: {e}")
 
+    def load_record(self):
+        """
+        Wrapper method to load the record.
+        """
+        return load_record()
+
+    def save_record(self, time):
+        """
+        Wrapper method to save the record.
+        """
+        save_record(time)
+
 
 def setup_logging():
     """
@@ -119,11 +131,30 @@ def load_record():
     Loads the record from a file.
 
     Returns:
-        int: The record.
+        float: The record time in seconds, or None if no record exists.
     """
-    if os.path.exists(RECORD_PATH):
-        with open(RECORD_PATH, 'r') as record_file:
-            return int(record_file.readline())
+    try:
+        if os.path.exists(RECORD_PATH):
+            with open(RECORD_PATH, 'r') as record_file:
+                return float(record_file.readline().strip())
+        return None
+    except (ValueError, IOError) as e:
+        logging.error(f"Error loading record: {e}")
+        return None
+
+
+def save_record(time):
+    """
+    Saves a new record to the file.
+
+    Args:
+        time (float): The new record time in seconds.
+    """
+    try:
+        with open(RECORD_PATH, 'w') as record_file:
+            record_file.write(f"{time}")
+    except IOError as e:
+        logging.error(f"Error saving record: {e}")
 
 
 def get_bot_config():

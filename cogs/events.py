@@ -79,11 +79,23 @@ class BotEvents(commands.Cog):
                 time_taken = time.time() - self.message_timestamp
                 if time_taken <= countdown:
                     self.bot_logger.info(f'User {after.name} came online within {time_taken:.2f} seconds')
+
+                    # Check if this is a new record
+                    current_record = self.bot.config.load_record() or float('inf')
+                    is_new_record = time_taken < current_record
+
+                    if is_new_record:
+                        self.bot.config.save_record(time_taken)
+                        record_text = "\n Ein neuer cum record - Kawaii desu~ UwU ✨"
+                    else:
+                        record_text = (f"\nMerlin kam schon mal schneller in nur "
+                                       f"{current_record:.3f} Sekunden desu desu! OwO 💖")
+
                     channel = self.bot.get_channel(self.last_channel_id)
                     if channel:
                         embed = discord.Embed(
                             title="🌈 Femboy Merlin ist gekommen 💦",
-                            description=f"Femboy Merlin ist in nur {time_taken:.3f} Sekunden gekommen! ✨",
+                            description=f"Femboy Merlin ist in nur {time_taken:.3f} Sekunden gekommen! ✨{record_text}",
                             color=discord.Color.purple()
                         )
                         await channel.send(embed=embed)
